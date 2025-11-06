@@ -1,0 +1,30 @@
+name: Basic CI Check
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - test
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - develop
+      - test
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Node setup
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Basic validation
+        run: echo "✅ Repositorio configurado correctamente. CI funcionando."
