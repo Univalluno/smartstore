@@ -1,0 +1,21 @@
+{
+  "name": "smartstore",
+  "version": "1.0.0",
+  "description": "Tienda inteligente - Proyecto #3 Desarrollo de Software 2",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "echo 'Lint no configurado'",
+    "build": "echo 'Build no configurado'"
+  },
+  "keywords": [
+    "ecommerce",
+    "smartstore",
+    "univalle"
+  ],
+  "author": "Equipo SmartStore",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^30.2.0"
+  }
+}
