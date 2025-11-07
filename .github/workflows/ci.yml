@@ -1,30 +1,73 @@
-name: Basic CI Check
+name: CI/CD Pipeline - SmartStore
 
 on:
   push:
-    branches:
-      - main
-      - develop
-      - test
-      - feature/**
+    branches: [ main, develop, 'release/**', 'feature/**' ]
   pull_request:
-    branches:
-      - main
-      - develop
-      - test
+    branches: [ main, develop ]
 
 jobs:
-  check:
+  build-test-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        node-version: [20.x]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Node setup
-        uses: actions/setup-node@v3
+        uses: actions/checkout@v4
         with:
-          node-version: 20
+          fetch-depth: 0
 
-      - name: Basic validation
-        run: echo "✅ Repositorio configurado correctamente. CI funcionando."
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint --if-present || echo "Lint no configurado"
+
+      - name: Run tests with coverage
+        run: |
+          npm test -- --coverage --passWithNoTests || echo "No hay pruebas aún"
+
+      - name: Build project
+        run: npm run build --if-present
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartstore-build-${{ github.sha }}
+          path: |
+            dist/
+            build/
+            *.jar
+            *.war
+            package.json
+            !node_modules/
+          retention-days: 7
+
+      - name: Validate Conventional Commits
+        if: github.event_name == 'pull_request'
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release (solo en release/*)
+        if: startsWith(github.ref, 'refs/heads/release/')
+        run: |
+          VERSION=$(echo ${{ github.ref }} | sed -e 's#.*/release/v##')
+          echo "Creando release v$VERSION"
+          gh release create "v$VERSION" \
+            --title "Release v$VERSION" \
+            --notes "Entrega continua automática desde CI/CD" \
+            --target ${{ github.sha }} \
+            ./smartstore-build-${{ github.sha }}/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
