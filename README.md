@@ -1,7 +1,7 @@
-# smartstore
+# SmartStore
 # SmartStore - Proyecto #3: Desarrollo de Software 2 (Universidad del Valle)
 
-**Equipo:** [Tus nombres: Univalleño, Jerson, Santiago, Esteban]  
+**Equipo:** [Univalleño, Jerson, Santiago, Esteban]  
 **Sprint 3: CI/CD Completo**  
 **Fecha:** 7 de noviembre de 2025  
 
@@ -9,9 +9,9 @@
 Aplicación de e-commerce con autenticación, productos y carrito. Implementado con **Scrum + DevOps** (CI/CD, pruebas, releases automáticos).
 
 ## Stack Tecnológico
-- **Frontend:** React/Vite (o tu stack)
-- **Backend:** Node/Express (o tu stack)
-- **DB:** [Tu DB]
+- **Frontend:** React/Vite 
+- **Backend:** Node/Express 
+- **DB:** PostgreSQL
 - **CI/CD:** GitHub Actions
 
 ## CI/CD IMPLEMENTADO
@@ -40,18 +40,11 @@ Pipeline completo en `.github/workflows/ci-cd.yml`:
 
 ## Instalación y Uso
 1. `git clone https://github.com/Univalluno/smartstore.git`
-2. `npm install`
-3. `npm test` (pruebas)
-4. `npm run build` (build)
-5. `npm start` (dev)
+2. `npm install` (Instalar dependencias necesarias)
+4. `npm test` (pruebas)
+5. `npm run build` (build)
+6. `npm start` (dev)
 
 ## Badges
 ![CI/CD](https://github.com/Univalluno/smartstore/actions/workflows/ci-cd.yml/badge.svg)  
 ![Release](https://img.shields.io/github/v/release/Univalluno/smartstore)
-
----
-
-**¡ENTREGA 100% CUMPLIDA!**  
-SmartStore listo para producción. Para más detalles, ver [Confluence (cuando vuelva)](https://tu-universidad.atlassian.net/wiki).
-
----
