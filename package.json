@@ -1,0 +1,10 @@
+﻿{
+  "name": "smartstore",
+  "version": "1.0.0", 
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'Iniciar desarrollo'",
+    "build": "echo 'Build proyecto'", 
+    "test": "echo 'Ejecutar tests'"
+  }
+}
