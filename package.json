@@ -1,10 +1,13 @@
-﻿{
+{
   "name": "smartstore",
-  "version": "1.0.0", 
+  "version": "1.0.0",
   "type": "module",
+  "workspaces": [
+    "apps/web"
+  ],
   "scripts": {
-    "dev": "echo 'Iniciar desarrollo'",
-    "build": "echo 'Build proyecto'", 
-    "test": "echo 'Ejecutar tests'"
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "install:all": "npm install && cd apps/web && npm install"
   }
 }
