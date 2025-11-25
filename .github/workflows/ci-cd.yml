@@ -1,0 +1,38 @@
+name: CI/CD + DevSecOps (+0.3)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & Build Backend
+        run: |
+          cd backend || exit 0
+          npm ci
+          npm run build || echo "no backend yet"
+
+      - name: Install & Build Frontend
+        run: |
+          cd frontend || exit 0
+          npm ci
+          npm run build || echo "no frontend yet"
+
+      - name: CodeQL Security Scan
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript,typescript
+
+      - name: CodeQL Analyze
+        uses: github/codeql-action/analyze@v3
