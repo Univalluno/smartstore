@@ -6,9 +6,18 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+permissions:
+  contents: read
+  security-events: write   # ← esto soluciona el problema
+  actions: read
+  checks: write
+
 jobs:
   security-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # también puedes ponerlo aquí si prefieres a nivel de job
     steps:
       - uses: actions/checkout@v4
 
