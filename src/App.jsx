@@ -12,7 +12,7 @@ const allProducts = [
     discount: "-22%",
     category: "tecnologia",
     subcategory: "Celulares",
-    img: "src/assets/images/iPhone-15.WEBP",
+    img: "public/images/iPhone-15.WEBP",
   },
   {
     name: "Samsung Galaxy S24 Ultra",
@@ -21,7 +21,7 @@ const allProducts = [
     discount: "-24%",
     category: "tecnologia",
     subcategory: "Celulares",
-    img: "src/assets/images/galaxys24ultra.jpg",
+    img: "public/images/galaxys24ultra.jpg",
   },
   {
     name: "Xiaomi 14 Pro 512GB",
@@ -30,7 +30,7 @@ const allProducts = [
     discount: "-25%",
     category: "tecnologia",
     subcategory: "Celulares",
-    img: "src/assets/images/xiaomi14pro.WEBP",
+    img: "public/images/xiaomi14pro.WEBP",
   },
   {
     name: "Motorola Edge 50 Pro",
@@ -39,7 +39,7 @@ const allProducts = [
     discount: "-26%",
     category: "tecnologia",
     subcategory: "Celulares",
-    img: "src/assets/images/motoedge.WEBP",
+    img: "public/images/motoedge.WEBP",
   },
 
   // Tablets
@@ -50,7 +50,7 @@ const allProducts = [
     discount: "-23%",
     category: "tecnologia",
     subcategory: "Tablets",
-    img: "src/assets/images/ipadpro11.WEBP",
+    img: "public/images/ipadpro11.WEBP",
   },
   {
     name: "Samsung Galaxy Tab S9",
@@ -59,7 +59,7 @@ const allProducts = [
     discount: "-26%",
     category: "tecnologia",
     subcategory: "Tablets",
-    img: "src/assets/images/galaxytabs9.jpg",
+    img: "public/images/galaxytabs9.jpg",
   },
 
   // Computadores
@@ -70,7 +70,7 @@ const allProducts = [
     discount: "-21%",
     category: "tecnologia",
     subcategory: "Computadores",
-    img: "src/assets/images/macbookairm3.jpeg",
+    img: "public/images/macbookairm3.jpeg",
   },
   {
     name: "ASUS ROG Strix G16",
@@ -79,7 +79,7 @@ const allProducts = [
     discount: "-29%",
     category: "tecnologia",
     subcategory: "Computadores",
-    img: "src/assets/images/asusrogstrixg16.WEBP",
+    img: "public/images/asusrogstrixg16.WEBP",
   },
 
   // Televisores
@@ -90,7 +90,7 @@ const allProducts = [
     discount: "-32%",
     category: "tecnologia",
     subcategory: "Televisores",
-    img: "src/assets/images/tvsamsung65.WEBP",
+    img: "public/images/tvsamsung65.WEBP",
   },
   {
     name: 'LG OLED 55"',
@@ -99,7 +99,7 @@ const allProducts = [
     discount: "-31%",
     category: "tecnologia",
     subcategory: "Televisores",
-    img: "src/assets/images/lgoled55.WEBP",
+    img: "public/images/lgoled55.WEBP",
   },
 
   // Audio
@@ -110,7 +110,7 @@ const allProducts = [
     discount: "-25%",
     category: "tecnologia",
     subcategory: "Audio y Sonido",
-    img: "src/assets/images/Sony WH-1000XM5.jpg",
+    img: "public/images/Sony WH-1000XM5.jpg",
   },
   {
     name: "JBL Flip 6",
@@ -119,7 +119,7 @@ const allProducts = [
     discount: "-33%",
     category: "tecnologia",
     subcategory: "Audio y Sonido",
-    img: "/images/jblflip6.jpg",
+    img: "public/images/jblflip6.jpg",
   },
 
   // Smartwatches
@@ -546,19 +546,19 @@ function App() {
   const heroOffers = [
     {
       title: "Hasta 60% en Tecnología",
-      img: "src/assets/images/black1.jpg",
+      img: "public/images/black1.jpg",
     },
     {
       title: "iPhone Pro Max con Descuento",
-      img: "src/assets/images/iPhone-15.WEBP",
+      img: "public/images/iPhone-15.WEBP",
     },
     {
       title: 'TV Samsung 65" QLED 4K',
-      img: "src/assets/images/tvsamsung65.WEBP",
+      img: "public/images/tvsamsung65.WEBP",
     },
     {
       title: "Nevera Haceb Side by Side",
-      img: "src/assets/images/haceb.webp",
+      img: "public/images/haceb.webp",
     },
   ];
 
@@ -686,7 +686,7 @@ function App() {
         onSelectCategory={handleSelectCategory}
       />
 
-      <section className="relative h-[70vh] max-h-[720px] overflow-hidden pt-20">
+      <section className="relative h-[42vh] md:h-[48vh] lg:h-[52vh] overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
@@ -698,38 +698,60 @@ function App() {
             <img
               src={heroOffers[currentSlide].img}
               alt="Oferta"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
             />
+
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
-            <div className="absolute bottom-20 left-10 text-white">
-              <h1 className="text-4xl md:text-6xl font-black mb-4">
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
+            <div className="absolute inset-x-0 bottom-6 text-center px-6">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white drop-shadow-2xl leading-none mb-2">
                 BLACK DAYS 2025
               </h1>
-              <p className="text-xl md:text-2xl font-bold">
+              <p className="text-xl md:text-3xl font-bold text-white drop-shadow-xl mb-4">
                 {heroOffers[currentSlide].title}
               </p>
-              <button className="mt-6 bg-yellow-400 text-black font-black text-lg px-8 py-4 rounded-full hover:bg-yellow-300 transform hover:scale-105 transition">
+              <button className="bg-yellow-400 text-black font-black text-xl md:text-2xl px-10 py-5 rounded-full hover:bg-yellow-300 transform hover:scale-110 transition shadow-2xl">
                 ¡COMPRA AHORA!
               </button>
             </div>
           </motion.div>
         </AnimatePresence>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+        <div className="absolute bottom-20 md:bottom-24 left-1/2 -translate-x-1/2 flex gap-2 z-30">
           {heroOffers.map((_, i) => (
-            <button
+            <div
               key={i}
               onClick={() => setCurrentSlide(i)}
-              className={`w-4 h-4 rounded-full transition ${
-                i === currentSlide ? "bg-white w-12" : "bg-white/50"
+              className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                i === currentSlide ? "bg-white w-10" : "bg-white/70"
               }`}
             />
           ))}
         </div>
+        {/* Flechas del slider */}
+        <button
+          onClick={() =>
+            setCurrentSlide((prev) =>
+              prev === 0 ? heroOffers.length - 1 : prev - 1
+            )
+          }
+          className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 text-white w-12 h-12 flex items-center justify-center rounded-full hover:bg-black/60 transition text-4xl z-30"
+        >
+          ‹
+        </button>
+
+        <button
+          onClick={() =>
+            setCurrentSlide((prev) => (prev + 1) % heroOffers.length)
+          }
+          className="absolute right-5 top-1/2 -translate-y-1/2 bg-black/50 text-white p-6 rounded-full hover:bg-black/70 text-6xl font-bold z-30"
+        >
+          ›
+        </button>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6 py-20 -mt-32 relative z-10">
-        <h2 className="text-5xl font-black text-center mb-16 text-white drop-shadow-2xl">
+      <section className="max-w-7xl mx-auto px-6 -mt-16 md:-mt-20 relative z-20">
+        <h2 className="text-5xl md:text-6xl font-black text-center mb-16 text-white bg-black/60 px-8 py-6 rounded-2xl inline-block mx-auto">
           {sectionTitle}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12">
@@ -744,7 +766,7 @@ function App() {
                 <img
                   src={p.img}
                   alt={p.name}
-                  className="h-[280px] w-auto object-contain group-hover:scale-110 transition"
+                  className="h-[200px] w-auto object-contain group-hover:scale-105 transition"
                 />
 
                 <div className="absolute top-3 left-3 bg-red-600 text-white font-bold px-4 py-2 rounded-full text-sm">
