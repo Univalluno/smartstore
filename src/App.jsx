@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-route
 import { motion, AnimatePresence } from "framer-motion";
 import MegaMenu from "./components/MegaMenu";
 import ProductDetail from "./pages/ProductDetail";
+import ChatWidget from "/src/components/ChatWidget";
 
 const allProducts = [
   // TECNOLOGÍA - Celulares
@@ -1054,6 +1055,7 @@ function HomePage() {
           </p>
         </div>
       </footer>
+      <ChatWidget />
     </>
   );
 }
