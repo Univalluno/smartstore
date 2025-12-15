@@ -8,13 +8,13 @@ class User {
     const { email, password, firstName, lastName } = userData;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // CAMBIO: Usar $n y agregar RETURNING id
+    // CAMBIO CRÍTICO: Añadimos mfa_secret y mfa_enabled a la lista de columnas y a los valores
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING id',
-      [email, hashedPassword, firstName, lastName]
+      'INSERT INTO users (email, password_hash, first_name, last_name, mfa_secret, mfa_enabled) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [email, hashedPassword, firstName, lastName, null, false] // Valores por defecto para MFA: null y false (booleano)
     );
 
-    // CAMBIO: Obtener el ID de la fila devuelta (PostgreSQL)
+    // Obtener el ID de la fila devuelta (PostgreSQL)
     return {
       id: result.rows[0].id,
       email,
