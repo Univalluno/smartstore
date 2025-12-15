@@ -1,4 +1,4 @@
-User.js - MySQL
+// models/User.js - MySQL
 import pool from '../config/db.js';
 import bcrypt from 'bcryptjs';
 
@@ -96,4 +96,3 @@ class User {
 }
 
 export default User;
-

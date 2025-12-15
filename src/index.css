@@ -4,9 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* La fuente Inter ya está importada arriba, pero la regla `@layer base`
-aplica los estilos globales.
-*/
+/* Fuente Inter desde Google Fonts (ya está en index.html, pero por si acaso) */
 
 @layer base {
   body {
