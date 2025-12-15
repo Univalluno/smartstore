@@ -82,7 +82,8 @@ const ProfilePage = () => {
 
   // Ver detalles del pedido
   const handleViewOrderDetails = (orderNumber) => {
-    fetch(`http://localhost:5000/api/orders/number/${orderNumber}`)
+    fetch(`/api/orders/number/${orderNumber}`)
+
       .then(res => res.json())
       .then(data => {
         if (data.success && data.order) {

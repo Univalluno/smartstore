@@ -94,7 +94,8 @@ function PaymentSimulation() {
             setPaymentCompleted(true);
 
         
-            fetch(`http://localhost:5000/api/orders/${orderNumber}/status`, {
+            fetch(`/api/orders/${orderNumber}/status`, {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

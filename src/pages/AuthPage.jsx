@@ -36,8 +36,9 @@ const AuthPage = () => {
 
         try {
             const url = isLogin
-                ? 'http://localhost:5000/api/auth/login'
-                : 'http://localhost:5000/api/auth/register';
+                ? '/api/auth/login'
+                : '/api/auth/register';
+
 
             const payload = isLogin
                 ? { email, password }
@@ -84,7 +85,8 @@ const AuthPage = () => {
     // FUNCIÓN MFA
     const handleVerifyMFA = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/auth/verify', {
+                const response = await fetch('/api/auth/verify', {
+
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -142,16 +144,17 @@ const AuthPage = () => {
         setRecoveryLoading(true);
 
         try {
-            console.log('🔗 Haciendo fetch a:', 'http://localhost:5000/api/password/forgot');
-            
-            const response = await fetch('http://localhost:5000/api/password/forgot', {
+            console.log('Haciendo fetch a:', '/api/password/forgot');
+
+            const response = await fetch('/api/password/forgot', {
+
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: recoveryEmail }),
             });
 
             console.log('📥 Respuesta recibida, status:', response.status);
-            
+
             const data = await response.json();
             console.log('📦 Data recibida:', data);
 
@@ -163,7 +166,7 @@ const AuthPage = () => {
 
             if (data.resetLink) {
                 console.log('🔗 Enlace para desarrollo:', data.resetLink);
-                
+
             }
 
             setShowForgotModal(false);
@@ -347,11 +350,11 @@ const AuthPage = () => {
                 {/* === MODAL DE RECUPERAR CONTRASEÑA === */}
                 {showForgotModal && (
                     <>
-                        <div 
+                        <div
                             className="fixed inset-0 bg-black/50 z-50"
                             onClick={() => setShowForgotModal(false)}
                         />
-                        
+
                         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9 }}
@@ -394,11 +397,10 @@ const AuthPage = () => {
                                         <button
                                             onClick={handleForgotPassword}
                                             disabled={recoveryLoading}
-                                            className={`flex-1 py-3 rounded-xl font-medium ${
-                                                recoveryLoading 
-                                                    ? 'bg-gray-400' 
-                                                    : 'bg-orange-600 hover:bg-orange-700 text-white'
-                                            }`}
+                                            className={`flex-1 py-3 rounded-xl font-medium ${recoveryLoading
+                                                ? 'bg-gray-400'
+                                                : 'bg-orange-600 hover:bg-orange-700 text-white'
+                                                }`}
                                         >
                                             {recoveryLoading ? 'Enviando...' : 'Enviar Instrucciones'}
                                         </button>

@@ -1,5 +1,6 @@
 // server.js
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mysql from 'mysql2/promise';
@@ -10,12 +11,14 @@ import passwordResetRoutes from './routes/passwordReset.js';
 dotenv.config();
 
 const app = express();
+const __dirname = path.resolve();
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 // Conexión a la base de datos
@@ -297,6 +300,12 @@ app.get('/api/orders/number/:orderNumber', async (req, res) => {
   }
 });
 
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Cualquier ruta que no sea /api devuelve React
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
 // ============================
 // Inicializar servidor
 // ============================

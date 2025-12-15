@@ -27,7 +27,8 @@ const ResetPassword = () => {
 
   const validateToken = async (tokenToValidate) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/password/validate/${tokenToValidate}`);
+      const response = await fetch(`/api/password/validate/${tokenToValidate}`)
+
       const data = await response.json();
       
       if (data.valid) {
@@ -48,7 +49,8 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/password/forgot', {
+      const response = await fetch('/api/password/forgot', {
+
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -90,7 +92,8 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/password/reset/${token}`, {
+      const response = await fetch(`/api/password/reset/${token}`, {
+
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),

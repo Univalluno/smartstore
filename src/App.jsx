@@ -1141,7 +1141,6 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/auth/reset-password/:token" element={<ResetPasswordPage />} />
-        <Route path="/auth" element={<AuthPage />} />
         <Route path="/auth/reset-password" element={<ResetPassword />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment/:method" element={<PaymentSimulation />} />
