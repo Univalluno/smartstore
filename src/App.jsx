@@ -57,7 +57,7 @@
       discount: "-25%",
       category: "tecnologia",
       subcategory: "Celulares",
-      img: "public/images/xiaomi14pro.webp",
+      img: "/images/xiaomi14pro.webp",
       specs: {
         pantalla: '6.73" LTPO AMOLED',
         procesador: "Snapdragon 8 Gen 3",
