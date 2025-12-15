@@ -6,7 +6,7 @@ const ProductDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const product = location.state?.product;
-  
+
   const [cart, setCart] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [userReview, setUserReview] = useState({
@@ -21,7 +21,7 @@ const ProductDetail = () => {
   useEffect(() => {
     const savedCart = localStorage.getItem('smartstore-cart');
     const savedReviews = localStorage.getItem('smartstore-reviews');
-    
+
     if (savedCart) setCart(JSON.parse(savedCart));
     if (savedReviews) setReviews(JSON.parse(savedReviews));
   }, []);
@@ -30,7 +30,7 @@ const ProductDetail = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white">
         <p className="text-2xl text-gray-600 mb-6">Producto no encontrado</p>
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition"
         >
@@ -42,16 +42,16 @@ const ProductDetail = () => {
 
   // Filtrar reseñas para este producto
   const productReviews = reviews.filter(review => review.productName === product.name);
-  
+
   // Calcular promedio de calificaciones
-  const averageRating = productReviews.length > 0 
+  const averageRating = productReviews.length > 0
     ? (productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length).toFixed(1)
     : 0;
 
   const handleAddToCart = () => {
     const currentCart = JSON.parse(localStorage.getItem('smartstore-cart') || '[]');
     const exists = currentCart.find((x) => x.name === product.name);
-    
+
     let newCart;
     if (exists) {
       newCart = currentCart.map((x) =>
@@ -60,34 +60,62 @@ const ProductDetail = () => {
     } else {
       newCart = [...currentCart, { ...product, qty: 1 }];
     }
-    
+
     localStorage.setItem('smartstore-cart', JSON.stringify(newCart));
     setCart(newCart);
-    
+
     // Mostrar notificación
     showNotification(`${product.name} agregado al carrito`, 'success');
+
+    // REDIRIGIR A LA PÁGINA DE INICIO
+    setTimeout(() => {
+      navigate('/');
+    }, 300);
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
+    const currentCart = JSON.parse(localStorage.getItem('smartstore-cart') || '[]');
+    const exists = currentCart.find((x) => x.name === product.name);
+
+    let newCart;
+    if (exists) {
+      newCart = currentCart.map((x) =>
+        x.name === product.name ? { ...x, qty: x.qty + 1 } : x
+      );
+    } else {
+      newCart = [...currentCart, { ...product, qty: 1 }];
+    }
+
+    localStorage.setItem('smartstore-cart', JSON.stringify(newCart));
+    setCart(newCart);
+
+    // Mostrar notificación
+    showNotification(`${product.name} agregado al carrito`, 'success');
+
+    // REDIRIGIR AL CHECKOUT CON EL CARRITO
     setTimeout(() => {
-      navigate('/');
-    }, 100);
+      navigate('/checkout', {
+        state: {
+          cart: newCart,
+          total: newCart.reduce((a, i) => a + i.price * i.qty, 0)
+        }
+      });
+    }, 300);
   };
 
   const handleSubmitReview = (e) => {
     e.preventDefault();
-    
+
     if (!userReview.rating) {
       showNotification('Por favor selecciona una calificación', 'error');
       return;
     }
-    
+
     if (!userReview.comment.trim()) {
       showNotification('Por favor escribe un comentario', 'error');
       return;
     }
-    
+
     const newReview = {
       id: Date.now(),
       productName: product.name,
@@ -96,11 +124,11 @@ const ProductDetail = () => {
       userName: userReview.userName || "Usuario Anónimo",
       date: new Date().toLocaleDateString('es-ES'),
     };
-    
+
     const updatedReviews = [...reviews, newReview];
     setReviews(updatedReviews);
     localStorage.setItem('smartstore-reviews', JSON.stringify(updatedReviews));
-    
+
     // Limpiar formulario
     setUserReview({
       rating: 0,
@@ -108,17 +136,16 @@ const ProductDetail = () => {
       userName: "",
     });
     setShowReviewForm(false);
-    
+
     showNotification('¡Gracias por tu reseña!', 'success');
   };
 
   const showNotification = (message, type = 'info') => {
     const notification = document.createElement('div');
-    notification.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3 ${
-      type === 'success' ? 'bg-green-600 text-white' :
+    notification.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3 ${type === 'success' ? 'bg-green-600 text-white' :
       type === 'error' ? 'bg-red-600 text-white' :
-      'bg-blue-600 text-white'
-    }`;
+        'bg-blue-600 text-white'
+      }`;
     notification.innerHTML = `
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -168,18 +195,17 @@ const ProductDetail = () => {
                 className="max-h-96 w-auto object-contain"
               />
             </div>
-            
+
             {/* Miniaturas (todas con la misma imagen) */}
             <div className="flex gap-4 overflow-x-auto pb-4">
               {thumbnails.map((thumb, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-lg flex items-center justify-center border-2 ${
-                    selectedImage === index 
-                      ? 'border-orange-600' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`flex-shrink-0 w-20 h-20 rounded-lg flex items-center justify-center border-2 ${selectedImage === index
+                    ? 'border-orange-600'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <img
                     src={thumb}
@@ -189,7 +215,7 @@ const ProductDetail = () => {
                 </button>
               ))}
             </div>
-            
+
             {/* Indicador de imagen seleccionada */}
             <div className="text-center text-gray-600 text-sm">
               Imagen {selectedImage + 1} de {thumbnails.length}
@@ -204,7 +230,7 @@ const ProductDetail = () => {
                 {product.category} / {product.subcategory}
               </span>
               <h1 className="text-4xl md:text-5xl font-black mt-4">{product.name}</h1>
-              
+
               {/* Calificación promedio */}
               <div className="flex items-center gap-3 mt-3">
                 <div className="flex text-yellow-400 text-2xl">
@@ -243,7 +269,7 @@ const ProductDetail = () => {
                   <span className="text-sm">¡Oferta especial!</span>
                 </div>
               )}
-              
+
               {/* Stock simulado */}
               <div className="mt-4">
                 <div className="flex items-center gap-2 text-green-600 font-medium">
@@ -262,7 +288,7 @@ const ProductDetail = () => {
               <p className="text-gray-700 text-lg leading-relaxed">
                 {product.description || "Este producto de alta calidad ofrece el mejor rendimiento en su categoría. Diseñado para durar y con garantía incluida. ¡Aprovecha esta oferta única por tiempo limitado!"}
               </p>
-              
+
               {/* Características */}
               <ul className="space-y-3 text-gray-700">
                 <li className="flex items-center gap-3">
@@ -346,7 +372,7 @@ const ProductDetail = () => {
               Escribir una reseña
             </button>
           </div>
-          
+
           {/* Formulario para agregar reseña */}
           {showReviewForm && (
             <motion.div
@@ -365,23 +391,22 @@ const ProductDetail = () => {
                         key={star}
                         type="button"
                         onClick={() => setUserReview({ ...userReview, rating: star })}
-                        className={`${
-                          star <= userReview.rating ? 'text-yellow-400' : 'text-gray-300'
-                        } hover:text-yellow-500`}
+                        className={`${star <= userReview.rating ? 'text-yellow-400' : 'text-gray-300'
+                          } hover:text-yellow-500`}
                       >
                         ★
                       </button>
                     ))}
                   </div>
                   <p className="text-sm text-gray-600 mt-1">
-                    {userReview.rating === 0 ? 'Selecciona una calificación' : 
-                     userReview.rating === 1 ? 'Muy malo' :
-                     userReview.rating === 2 ? 'Malo' :
-                     userReview.rating === 3 ? 'Regular' :
-                     userReview.rating === 4 ? 'Bueno' : 'Excelente'}
+                    {userReview.rating === 0 ? 'Selecciona una calificación' :
+                      userReview.rating === 1 ? 'Muy malo' :
+                        userReview.rating === 2 ? 'Malo' :
+                          userReview.rating === 3 ? 'Regular' :
+                            userReview.rating === 4 ? 'Bueno' : 'Excelente'}
                   </p>
                 </div>
-                
+
                 {/* Nombre (opcional) */}
                 <div>
                   <label className="block mb-2">Tu nombre (opcional):</label>
@@ -393,7 +418,7 @@ const ProductDetail = () => {
                     placeholder="Ej: Juan Pérez"
                   />
                 </div>
-                
+
                 {/* Comentario */}
                 <div>
                   <label className="block mb-2">Tu comentario:</label>
@@ -405,7 +430,7 @@ const ProductDetail = () => {
                     required
                   />
                 </div>
-                
+
                 {/* Botones del formulario */}
                 <div className="flex gap-4">
                   <button
@@ -428,7 +453,7 @@ const ProductDetail = () => {
               </form>
             </motion.div>
           )}
-          
+
           {/* Rating promedio */}
           {productReviews.length > 0 ? (
             <>
@@ -446,19 +471,19 @@ const ProductDetail = () => {
                     {productReviews.length} {productReviews.length === 1 ? 'reseña' : 'reseñas'}
                   </div>
                 </div>
-                
+
                 {/* Distribución de calificaciones */}
                 <div className="flex-1">
                   <div className="space-y-2">
                     {[5, 4, 3, 2, 1].map((stars) => {
                       const count = productReviews.filter(r => r.rating === stars).length;
                       const percentage = productReviews.length > 0 ? (count / productReviews.length) * 100 : 0;
-                      
+
                       return (
                         <div key={stars} className="flex items-center gap-3">
                           <span className="text-sm w-8">{stars}★</span>
                           <div className="flex-1 bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-yellow-400 h-2 rounded-full"
                               style={{ width: `${percentage}%` }}
                             ></div>
@@ -476,25 +501,25 @@ const ProductDetail = () => {
                 {productReviews
                   .sort((a, b) => b.id - a.id) // Ordenar por más reciente
                   .map((review) => (
-                  <div key={review.id} className="bg-white border rounded-2xl p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="flex text-yellow-400">
-                            {"★".repeat(review.rating)}
+                    <div key={review.id} className="bg-white border rounded-2xl p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="flex text-yellow-400">
+                              {"★".repeat(review.rating)}
+                            </div>
+                            <span className="font-bold">{review.userName}</span>
                           </div>
-                          <span className="font-bold">{review.userName}</span>
-                        </div>
-                        <p className="text-gray-700 mb-2">{review.comment}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span>{review.date}</span>
-                          <span>•</span>
-                          <span>{review.productName}</span>
+                          <p className="text-gray-700 mb-2">{review.comment}</p>
+                          <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <span>{review.date}</span>
+                            <span>•</span>
+                            <span>{review.productName}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </>
           ) : (

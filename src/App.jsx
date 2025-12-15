@@ -1,11 +1,17 @@
 import "./index.css";
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import MegaMenu from "./components/MegaMenu";
 import ProductDetail from "./pages/ProductDetail";
 import ChatWidget from "/src/components/ChatWidget";
-
+import AuthPage from "./pages/AuthPage";
+import ResetPassword from './pages/ResetPassword';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import ProfilePage from './pages/ProfilePage';
+import { useAuth } from './context/AuthContext';
+import CheckoutPage from "./pages/CheckoutPage";
+import PaymentSimulation from './pages/PaymentSimulation ';
 const allProducts = [
   // TECNOLOGÍA - Celulares
   {
@@ -504,7 +510,8 @@ function HomePage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-
+  const { user, logout } = useAuth();
+  const isAuthenticated = !!user; //
   const heroOffers = [
     {
       title: "Hasta 60% en Tecnología",
@@ -553,13 +560,13 @@ function HomePage() {
     // Filtro por búsqueda
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch =
         product.name.toLowerCase().includes(searchLower) ||
         product.category.toLowerCase().includes(searchLower) ||
         product.subcategory.toLowerCase().includes(searchLower);
       if (!matchesSearch) return false;
     }
-    
+
     // Filtro por categoría
     if (!selectedCategory) return true;
     const matchCategory = product.category === selectedCategory;
@@ -584,7 +591,12 @@ function HomePage() {
         );
       return [...prev, { ...p, qty: 1 }];
     });
-    setCartOpen(true);
+
+    // Mostrar notificación de éxito
+    showNotification(`${p.name} agregado al carrito`, 'success');
+
+    // Redirigir a la página de inicio
+    navigate('/');
   };
 
   const addReview = (productName, rating, comment, userName) => {
@@ -596,7 +608,7 @@ function HomePage() {
       userName: userName || "Usuario Anónimo",
       date: new Date().toLocaleDateString('es-ES'),
     };
-    
+
     const updatedReviews = [...reviews, newReview];
     setReviews(updatedReviews);
     return newReview;
@@ -625,17 +637,16 @@ function HomePage() {
   const sectionTitle = selectedSubcategory
     ? selectedSubcategory.toUpperCase()
     : selectedCategory
-    ? selectedCategory.replace("-", " ").toUpperCase()
-    : "OFERTAS IMBATIBLES";
+      ? selectedCategory.replace("-", " ").toUpperCase()
+      : "OFERTAS IMBATIBLES";
 
   // Mostrar notificación
   const showNotification = (message, type = 'info') => {
     const notification = document.createElement('div');
-    notification.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3 ${
-      type === 'success' ? 'bg-green-600 text-white' :
+    notification.className = `fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3 ${type === 'success' ? 'bg-green-600 text-white' :
       type === 'error' ? 'bg-red-600 text-white' :
-      'bg-blue-600 text-white'
-    }`;
+        'bg-blue-600 text-white'
+      }`;
     notification.innerHTML = `
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -668,14 +679,23 @@ function HomePage() {
               />
             </svg>
           </button>
+          {/* Botón de Iniciar Sesión Móvil - NUEVO */}
+          <button
+            onClick={() => navigate('/auth')}
+            className="md:hidden bg-yellow-400 text-black font-bold rounded-full px-4 py-2 hover:bg-yellow-300 transition ml-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </button>
 
-          <button 
+          <button
             onClick={() => {
               navigate('/');
               setSelectedCategory(null);
               setSelectedSubcategory(null);
               setSearchTerm("");
-            }} 
+            }}
             className="text-2xl md:text-4xl font-black tracking-tighter hover:opacity-90 transition"
           >
             SmartStore
@@ -704,7 +724,7 @@ function HomePage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
-              <button 
+              <button
                 onClick={() => setSearchTerm("")}
                 className="text-white/70 hover:text-white ml-2"
               >
@@ -712,6 +732,43 @@ function HomePage() {
               </button>
             )}
           </div>
+
+          {/* Botón de Iniciar Sesión - NUEVO */}
+          {/* Botón de Iniciar Sesión / Mi Cuenta (Escritorio) - REEMPLAZO */}
+          {isAuthenticated ? (
+            <div className="hidden md:flex items-center gap-3">
+              <button
+                onClick={() => navigate('/perfil')} // <-- NUEVA RUTA: /perfil
+                className="bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-full px-6 py-3 hover:from-green-600 hover:to-green-700 transition shadow-lg"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Mi Cuenta
+              </button>
+
+              <button
+                onClick={logout}
+                className="bg-red-600 text-white font-bold rounded-full px-3 py-3 hover:bg-red-700 transition shadow-lg"
+                title="Cerrar Sesión"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate('/auth')}
+              className="hidden md:flex bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-bold rounded-full px-6 py-3 hover:from-yellow-300 hover:to-yellow-400 transition shadow-lg"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Iniciar Sesión
+            </button>
+          )}
 
           {/* Botón del carrito */}
           <button
@@ -755,8 +812,12 @@ function HomePage() {
             <img
               src={heroOffers[currentSlide].img}
               alt="Oferta"
-              className="w-full h-full object-cover object-center"
+              className="w-full h-[500px] md:h-[600px] lg:h-[700px] object-cover object-center mx-auto rounded-xl"
             />
+
+
+
+
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
@@ -767,7 +828,7 @@ function HomePage() {
               <p className="text-base md:text-xl lg:text-3xl font-bold text-white drop-shadow-xl mb-3 md:mb-4">
                 {heroOffers[currentSlide].title}
               </p>
-              <button 
+              <button
                 onClick={() => navigate('/')}
                 className="bg-yellow-400 text-black font-black text-base md:text-xl lg:text-2xl px-6 md:px-10 py-3 md:py-5 rounded-full hover:bg-yellow-300 transform hover:scale-110 transition shadow-2xl"
               >
@@ -783,13 +844,12 @@ function HomePage() {
             <div
               key={i}
               onClick={() => setCurrentSlide(i)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                i === currentSlide ? "bg-white w-6 md:w-10" : "bg-white/70"
-              }`}
+              className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer ${i === currentSlide ? "bg-white w-6 md:w-10" : "bg-white/70"
+                }`}
             />
           ))}
         </div>
-        
+
         {/* Flecha izquierda */}
         <button
           onClick={() =>
@@ -814,23 +874,27 @@ function HomePage() {
       </section>
 
       {/* Sección de productos */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 -mt-12 md:-mt-16 lg:-mt-20 relative z-20">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 md:mb-10">
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-center md:text-left text-white bg-black/60 px-4 md:px-8 py-3 md:py-6 rounded-2xl mb-4 md:mb-0">
-            {sectionTitle}
+      <section className="max-w-7xl mx-auto px-4 md:px-6 mt-12 md:mt-16 lg:mt-20 relative z-20">
+        <div className="relative mb-8 md:mb-10">
+          {/* Título centrado */}
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-center text-white tracking-tight">
+            <span className="inline-block bg-gradient-to-r from-orange-600 via-pink-600 to-red-600 px-8 md:px-16 py-6 md:py-10 rounded-3xl shadow-2xl transform hover:scale-105 transition duration-500">
+              OFERTAS IMBATIBLES
+            </span>
           </h2>
+
+          {/* Mensaje de búsqueda (si existe) - posicionado abajo a la derecha */}
           {searchTerm && (
-            <div className="text-sm md:text-xl text-white bg-black/40 px-4 py-2 rounded-lg">
+            <div className="absolute top-full right-0 mt-4 text-sm md:text-xl text-white bg-black/60 backdrop-blur-sm px-6 py-3 rounded-xl shadow-lg">
               Resultados para: <span className="font-bold">"{searchTerm}"</span>
             </div>
           )}
         </div>
-        
         {/* Mensaje si no hay productos */}
         {filteredProducts.length === 0 ? (
           <div className="text-center py-12 md:py-20 bg-gradient-to-r from-gray-50 to-gray-100 rounded-3xl shadow-xl">
             <p className="text-xl md:text-2xl text-gray-600 mb-4">No se encontraron productos</p>
-            <button 
+            <button
               onClick={() => {
                 setSearchTerm("");
                 setSelectedCategory(null);
@@ -848,7 +912,11 @@ function HomePage() {
                 key={i}
                 whileHover={{ y: -8 }}
                 className="bg-white rounded-2xl md:rounded-3xl shadow-xl hover:shadow-2xl overflow-hidden cursor-pointer group hover:scale-[1.02] transition-all duration-300"
-                onClick={() => navigate(`/product/${p.name.replace(/\s+/g, '-')}`, { state: { product: p } })}
+                onClick={(e) => {
+                  if (e.target.tagName !== 'BUTTON') {
+                    navigate(`/product/${p.name.replace(/\s+/g, '-')}`, { state: { product: p } });
+                  }
+                }}
               >
                 <div className="relative flex items-center justify-center bg-gray-100 h-48 md:h-64 lg:h-[340px]">
                   <img
@@ -916,7 +984,7 @@ function HomePage() {
                 </h2>
                 <div className="flex gap-2 md:gap-4">
                   {cart.length > 0 && (
-                    <button 
+                    <button
                       onClick={() => {
                         clearCart();
                         showNotification('Carrito vaciado', 'info');
@@ -926,23 +994,23 @@ function HomePage() {
                       Vaciar
                     </button>
                   )}
-                  <button 
-                    onClick={() => setCartOpen(false)} 
+                  <button
+                    onClick={() => setCartOpen(false)}
                     className="text-2xl md:text-4xl hover:text-gray-600"
                   >
                     ×
                   </button>
                 </div>
               </div>
-              
+
               {cart.length === 0 ? (
                 <div className="text-center py-12 md:py-20">
                   <svg className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                   </svg>
                   <p className="text-gray-500 text-lg md:text-xl mb-4">El carrito está vacío</p>
-                  <button 
-                    onClick={() => {setCartOpen(false); navigate('/');}}
+                  <button
+                    onClick={() => { setCartOpen(false); navigate('/'); }}
                     className="bg-orange-600 text-white px-6 md:px-8 py-3 md:py-4 rounded-lg hover:bg-orange-700 font-bold text-base md:text-lg"
                   >
                     Explorar productos
@@ -967,7 +1035,7 @@ function HomePage() {
                             ${item.price.toLocaleString()} × {item.qty}
                           </p>
                           <div className="flex gap-3 md:gap-4 mt-2">
-                            <button 
+                            <button
                               onClick={() => {
                                 removeFromCart(item.name);
                                 showNotification(`${item.name} eliminado`, 'info');
@@ -976,9 +1044,9 @@ function HomePage() {
                             >
                               Eliminar
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
-                                setCart(prev => prev.map(x => 
+                                setCart(prev => prev.map(x =>
                                   x.name === item.name ? { ...x, qty: x.qty + 1 } : x
                                 ));
                                 showNotification(`${item.name} agregado`, 'success');
@@ -992,7 +1060,7 @@ function HomePage() {
                       </div>
                     ))}
                   </div>
-                  
+
                   <div className="mt-8 md:mt-10 pt-6 border-t">
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-lg md:text-xl font-bold">Subtotal:</span>
@@ -1006,21 +1074,23 @@ function HomePage() {
                       <span className="text-xl md:text-2xl font-black">Total:</span>
                       <span className="text-xl md:text-2xl font-black text-orange-600">${total.toLocaleString()}</span>
                     </div>
-                    
+
                     <div className="space-y-3 md:space-y-4">
-                      <button 
+                      <button
                         onClick={() => {
                           setCartOpen(false);
-                          showNotification("¡Gracias por tu compra! Total: $" + total.toLocaleString(), 'success');
-                          setTimeout(() => {
-                            clearCart();
-                          }, 500);
+                          navigate('/checkout', {
+                            state: {
+                              cart: cart,
+                              total: total
+                            }
+                          });
                         }}
                         className="w-full bg-gradient-to-r from-orange-600 to-pink-600 text-white py-4 md:py-6 rounded-xl font-black text-lg md:text-xl hover:opacity-90 transition"
                       >
                         FINALIZAR COMPRA
                       </button>
-                      <button 
+                      <button
                         onClick={() => {
                           setCartOpen(false);
                           navigate('/');
@@ -1061,11 +1131,26 @@ function HomePage() {
 }
 
 function App() {
+  const { user, loading } = useAuth();
   return (
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/auth/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth/reset-password" element={<ResetPassword />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/payment/:method" element={<PaymentSimulation />} />
+        <Route path="/profile" element={<ProfilePage />} />
+
+        <Route
+          path="/perfil"
+          element={user ? <ProfilePage /> : <Navigate to="/auth" replace />}
+        />
       </Routes>
     </Router>
   );
