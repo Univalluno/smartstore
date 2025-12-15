@@ -1,41 +1,39 @@
-// config/db.js - CONEXIÓN A POSTGRESQL (PG)
-import pkg from 'pg';
+// ===================================
+// config/db.js (SOLUCIÓN DEFINITIVA)
+// ===================================
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Cargar .env para entornos locales/Node
+dotenv.config({ path: path.resolve(process.cwd(), '.env') }); 
 
-const { Pool } = pkg;
+const CONNECTION_STRING = process.env.DATABASE_URL;
 
-// Nota: PostgreSQL prefiere usar la URL de conexión completa.
-// Asumo que tu archivo .env tiene una variable como DATABASE_URL 
-// que contiene la URL completa de Neon.
+if (!CONNECTION_STRING) {
+    console.error("❌ ERROR CRÍTICO: La variable DATABASE_URL de Neon no está configurada.");
+    throw new Error("DATABASE_URL no está definida.");
+}
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL, 
-    // Si usas las variables separadas (DB_HOST, DB_USER, etc.):
-    /*
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-    */
+// 1. DEFINICIÓN Y EXPORTACIÓN DEL POOL
+export const pool = new Pool({
+    connectionString: CONNECTION_STRING,
     ssl: {
-        rejectUnauthorized: false // Recomendado para Vercel/Neon si hay problemas de SSL
-    },
-    max: 10, // Máximo de 10 conexiones simultáneas
-    idleTimeoutMillis: 30000, // Desconectar clientes inactivos después de 30 segundos
+        rejectUnauthorized: false
+    }
 });
 
-// Prueba de conexión
+// 2. EXPORTACIÓN DEL ALIAS (para compatibilidad si se usa 'connection')
+export const connection = pool; 
+
+
+// 3. PRUEBA DE CONEXIÓN
 pool.connect()
     .then(client => {
-        console.log("PostgreSQL Pool Conectado Exitosamente!");
         client.release();
+        console.log('PostgreSQL Pool Conectado Exitosamente! ✅');
     })
     .catch(err => {
-        console.error("Error al conectar PostgreSQL Pool:", err.stack);
+        console.error('❌ ERROR: Falló la conexión al Pool de PostgreSQL.', err.stack);
+        process.exit(1); 
     });
-
-
-export default pool;
