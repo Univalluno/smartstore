@@ -62,8 +62,8 @@ const connection = pool;
 
 
 // Rutas existentes
-app.use('/api/auth', authRoutes(connection)); // NOTA: Debes asegurarte que tus rutas de auth y password usen 'connection'
-app.use('/api/password', passwordResetRoutes(connection)); // Si requieren la conexión, pásala como argumento
+app.use('/api/auth', authRoutes); // NOTA: Debes asegurarte que tus rutas de auth y password usen 'connection'
+app.use('/api/password', passwordResetRoutes);  // Si requieren la conexión, pásala como argumento
 
 // ============================
 // Rutas para órdenes y facturas
