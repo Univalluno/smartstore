@@ -6,8 +6,8 @@ import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import { sendWelcomeEmail } from '../utils/mailer.js';
 
-const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'smartstore2025';
+axios.post(`${import.meta.env.VITE_API_URL}/login`)
+
 
 /**
  * ============================
