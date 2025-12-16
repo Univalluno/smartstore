@@ -1,27 +1,27 @@
 // src/pages/AuthPage.jsx
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import toast, { Toaster } from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import toast, { Toaster } from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showQR, setShowQR] = useState(false);
   const [showMFACode, setShowMFACode] = useState(false);
-  const [mfaCode, setMfaCode] = useState('');
-  const [tempToken, setTempToken] = useState('');
-  const [qrImage, setQrImage] = useState('');
+  const [mfaCode, setMfaCode] = useState("");
+  const [tempToken, setTempToken] = useState("");
+  const [qrImage, setQrImage] = useState("");
 
   // === NUEVOS ESTADOS PARA RECUPERAR CONTRASEÑA ===
   const [showForgotModal, setShowForgotModal] = useState(false);
-  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryEmail, setRecoveryEmail] = useState("");
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -30,26 +30,30 @@ const AuthPage = () => {
   // ===== LOGIN / REGISTER =====
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
     setShowQR(false);
     setShowMFACode(false);
 
     try {
-      const url = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const url = isLogin ? "/api/auth/login" : "/api/auth/register";
       const payload = isLogin
         ? { email, password }
-        : { email, password, firstName, lastName };
+        : {
+            email,
+            password,
+            name: `${firstName} ${lastName}`,
+          };
 
       const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || 'Algo salió mal');
+      if (!response.ok) throw new Error(data.error || "Algo salió mal");
 
       // MFA
       if (isLogin && data.setup && data.qr) {
@@ -60,12 +64,12 @@ const AuthPage = () => {
         setTempToken(data.tempToken);
         setShowMFACode(true);
       } else if (!isLogin) {
-        toast.success('Cuenta creada correctamente, ahora inicia sesión');
+        toast.success("Cuenta creada correctamente, ahora inicia sesión");
         setIsLogin(true);
-        setPassword('');
+        setPassword("");
       } else {
         login(data.user, data.token);
-        navigate('/');
+        navigate("/");
       }
     } catch (err) {
       setError(err.message);
@@ -78,17 +82,17 @@ const AuthPage = () => {
   // ===== VERIFICAR MFA =====
   const handleVerifyMFA = async () => {
     try {
-      const response = await fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tempToken, code: mfaCode }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Código inválido');
+      if (!response.ok) throw new Error(data.error || "Código inválido");
 
       login(data.user, data.token);
-      toast.success('¡Autenticación exitosa! Redirigiendo...');
-      setTimeout(() => navigate('/'), 2000);
+      toast.success("¡Autenticación exitosa! Redirigiendo...");
+      setTimeout(() => navigate("/"), 2000);
     } catch (err) {
       setError(err.message);
       toast.error(err.message);
@@ -98,24 +102,24 @@ const AuthPage = () => {
   // ===== RECUPERAR CONTRASEÑA =====
   const handleForgotPassword = async () => {
     if (!recoveryEmail) {
-      toast.error('Ingresa tu email');
+      toast.error("Ingresa tu email");
       return;
     }
     setRecoveryLoading(true);
     try {
-      const response = await fetch('/api/password/forgot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/password/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: recoveryEmail }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error al solicitar');
+      if (!response.ok) throw new Error(data.error || "Error al solicitar");
 
       toast.success(data.message, { duration: 5000 });
       setShowForgotModal(false);
-      setRecoveryEmail('');
+      setRecoveryEmail("");
     } catch (error) {
-      toast.error(error.message || 'Error de conexión');
+      toast.error(error.message || "Error de conexión");
     } finally {
       setRecoveryLoading(false);
     }
@@ -123,8 +127,8 @@ const AuthPage = () => {
 
   // ===== FUNCIONES OAUTH =====
   const handleOAuthLogin = (provider) => {
-  window.location.href = `http://localhost:5000/api/auth/${provider}`;
-};
+    window.location.href = `http://localhost:5000/api/auth/${provider}`;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-pink-50 flex items-center justify-center p-4">
@@ -137,14 +141,14 @@ const AuthPage = () => {
         {/* HEADER */}
         <div className="bg-gradient-to-r from-orange-600 to-pink-600 p-8 relative">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             className="absolute top-4 right-4 text-white text-2xl font-bold"
           >
             ×
           </button>
           <div className="text-center">
             <h1 className="text-3xl font-black text-white">
-              {isLogin ? 'Inicia Sesión' : 'Crea tu Cuenta'}
+              {isLogin ? "Inicia Sesión" : "Crea tu Cuenta"}
             </h1>
           </div>
         </div>
@@ -152,7 +156,9 @@ const AuthPage = () => {
         {/* FORM */}
         <form onSubmit={handleSubmit} className="p-8">
           {error && (
-            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+              {error}
+            </div>
           )}
 
           {!isLogin && (
@@ -211,7 +217,11 @@ const AuthPage = () => {
             disabled={loading}
             className="w-full bg-orange-600 text-white font-bold py-3 rounded"
           >
-            {loading ? 'Procesando...' : isLogin ? 'Iniciar Sesión' : 'Registrarse'}
+            {loading
+              ? "Procesando..."
+              : isLogin
+              ? "Iniciar Sesión"
+              : "Registrarse"}
           </button>
 
           <div className="mt-4 text-center">
@@ -220,7 +230,7 @@ const AuthPage = () => {
               onClick={() => setIsLogin(!isLogin)}
               className="text-orange-600"
             >
-              {isLogin ? 'Crear cuenta' : 'Ya tengo cuenta'}
+              {isLogin ? "Crear cuenta" : "Ya tengo cuenta"}
             </button>
           </div>
 
@@ -228,13 +238,15 @@ const AuthPage = () => {
           <div className="mt-8">
             <div className="relative flex items-center">
               <div className="flex-grow border-t border-gray-300"></div>
-              <span className="flex-shrink mx-4 text-gray-500">O inicia con</span>
+              <span className="flex-shrink mx-4 text-gray-500">
+                O inicia con
+              </span>
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
             <div className="grid grid-cols-3 gap-3 mt-6">
               <button
                 type="button"
-                onClick={() => handleOAuthLogin('google')}
+                onClick={() => handleOAuthLogin("google")}
                 className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition"
               >
                 <img
@@ -247,7 +259,7 @@ const AuthPage = () => {
 
               <button
                 type="button"
-                onClick={() => handleOAuthLogin('microsoft')}
+                onClick={() => handleOAuthLogin("microsoft")}
                 className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition"
               >
                 <img
@@ -260,7 +272,7 @@ const AuthPage = () => {
 
               <button
                 type="button"
-                onClick={() => handleOAuthLogin('facebook')}
+                onClick={() => handleOAuthLogin("facebook")}
                 className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition"
               >
                 <img
@@ -340,7 +352,8 @@ const AuthPage = () => {
                     </button>
                   </div>
                   <p className="text-gray-600 mb-6">
-                    Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.
+                    Ingresa tu email y te enviaremos un enlace para restablecer
+                    tu contraseña.
                   </p>
                   <input
                     type="email"
@@ -361,11 +374,11 @@ const AuthPage = () => {
                       disabled={recoveryLoading}
                       className={`flex-1 py-3 rounded-xl font-medium ${
                         recoveryLoading
-                          ? 'bg-gray-400'
-                          : 'bg-orange-600 hover:bg-orange-700 text-white'
+                          ? "bg-gray-400"
+                          : "bg-orange-600 hover:bg-orange-700 text-white"
                       }`}
                     >
-                      {recoveryLoading ? 'Enviando...' : 'Enviar Instrucciones'}
+                      {recoveryLoading ? "Enviando..." : "Enviar Instrucciones"}
                     </button>
                   </div>
                 </div>
