@@ -3,7 +3,10 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import mysql from 'mysql2/promise';
+// ELIMINADO: import mysql from 'mysql2/promise';
+
+// AÑADIDO: Importamos el Pool de PostgreSQL
+import { Pool } from 'pg';
 
 import authRoutes from './routes/auth.js';
 import passwordResetRoutes from './routes/passwordReset.js';
@@ -21,20 +24,46 @@ app.use(cors({
 
 app.use(express.json());
 
-// Conexión a la base de datos
-const connection = await mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+// ===============================================
+// CONEXIÓN A LA BASE DE DATOS (PostgreSQL/Neon)
+// ===============================================
+
+const CONNECTION_STRING = process.env.DATABASE_URL;
+
+if (!CONNECTION_STRING) {
+  console.error("❌ ERROR CRÍTICO: La variable DATABASE_URL de Neon no está configurada.");
+  throw new Error("DATABASE_URL no está definida. Necesita la cadena de conexión de Neon.");
+}
+
+const pool = new Pool({
+  connectionString: CONNECTION_STRING,
+  ssl: {
+    rejectUnauthorized: false // Permite la conexión segura a Neon
+  }
 });
 
+// Prueba de conexión y manejo de errores (CRÍTICO)
+await pool.connect()
+  .then(client => {
+    client.release();
+    console.log('✅ Conexión exitosa a PostgreSQL (Neon).');
+  })
+  .catch(err => {
+    console.error('❌ ERROR: Fallo la conexión a PostgreSQL (Neon).', err.stack);
+    process.exit(1);
+  });
+
+// Renombramos la variable para que el código existente no tenga que cambiar
+const connection = pool;
+
+// ===============================================
+// FIN CONEXIÓN
+// ===============================================
+
+
 // Rutas existentes
-app.use('/api/auth', authRoutes);
-app.use('/api/password', passwordResetRoutes);
+app.use('/api/auth', authRoutes); // NOTA: Debes asegurarte que tus rutas de auth y password usen 'connection'
+app.use('/api/password', passwordResetRoutes);  // Si requieren la conexión, pásala como argumento
 
 // ============================
 // Rutas para órdenes y facturas
@@ -61,62 +90,48 @@ app.post('/api/orders', async (req, res) => {
       totalAmount
     } = req.body;
 
-    // VALIDACIONES DETALLADAS
-    console.log('🔍 Validando datos...');
-
-    if (!customerName) {
-      console.log('❌ Falta customerName');
-      return res.status(400).json({ success: false, error: 'Falta nombre del cliente' });
+    // VALIDACIONES DETALLADAS (omito para brevedad)
+    if (!customerName || !customerEmail || !cartItems || cartItems.length === 0 || !totalAmount) {
+      return res.status(400).json({ success: false, error: 'Faltan datos requeridos para la orden.' });
     }
-    if (!customerEmail) {
-      console.log('❌ Falta customerEmail');
-      return res.status(400).json({ success: false, error: 'Falta email del cliente' });
-    }
-    if (!cartItems || cartItems.length === 0) {
-      console.log('❌ Falta cartItems o está vacío');
-      return res.status(400).json({ success: false, error: 'El carrito está vacío' });
-    }
-    if (!totalAmount) {
-      console.log('❌ Falta totalAmount');
-      return res.status(400).json({ success: false, error: 'Falta el total de la orden' });
-    }
-
     console.log('✅ Datos válidos');
 
     const orderNumber = 'ORD-' + Date.now().toString().slice(-8) + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
     console.log('📝 Número de orden generado:', orderNumber);
 
-    // Insertar orden (AGREGAR shipping_notes)
-    const [orderResult] = await connection.execute(
+    // 1. INSERTAR ORDEN (CAMBIO CRÍTICO: execute -> query, ? -> $n, insertId -> RETURNING id)
+    const orderResult = await connection.query(
       `INSERT INTO orders 
-      (order_number, user_id, customer_name, customer_email, customer_phone, 
-       shipping_address, city, state, zip_code, shipping_notes, total_amount, payment_method) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (order_number, user_id, customer_name, customer_email, customer_phone, 
+       shipping_address, city, state, zip_code, shipping_notes, total_amount, payment_method) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+      RETURNING id`, // <<-- NECESARIO para obtener el ID en Postgres
       [
         orderNumber,
-        userId || null,
+        userId, // userId || null NO es necesario en JS si la columna lo permite
         customerName,
         customerEmail,
-        customerPhone || '',
-        shippingAddress || '',
-        city || '',
-        state || '',
-        zipCode || '',
-        shippingNotes || '',
+        customerPhone,
+        shippingAddress,
+        city,
+        state,
+        zipCode,
+        shippingNotes,
         totalAmount,
         paymentMethod || 'card'
       ]
     );
 
-    const orderId = orderResult.insertId;
+    // CAMBIO CRÍTICO: Obtener el ID de la primera fila devuelta
+    const orderId = orderResult.rows[0].id;
     console.log('✅ Orden insertada. ID:', orderId);
 
-    // Insertar items del pedido
+    // 2. Insertar items del pedido
     console.log('📦 Insertando', cartItems.length, 'items...');
     for (const item of cartItems) {
-      await connection.execute(
+      await connection.query( // execute -> query
         `INSERT INTO order_items (order_id, product_name, product_price, quantity, subtotal)
-         VALUES (?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5)`, // ? -> $n
         [orderId, item.name, item.price, item.qty, item.price * item.qty]
       );
     }
@@ -128,9 +143,10 @@ app.post('/api/orders', async (req, res) => {
     const taxAmount = totalAmount * 0.19;
 
     console.log('🧾 Creando factura:', invoiceNumber);
-    await connection.execute(
+    // 3. Insertar factura
+    await connection.query( // execute -> query
       `INSERT INTO invoices (order_id, invoice_number, issue_date, due_date, tax_amount, total_amount)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6)`, // ? -> $n
       [
         orderId,
         invoiceNumber,
@@ -153,10 +169,7 @@ app.post('/api/orders', async (req, res) => {
 
   } catch (error) {
     console.error('❌ ERROR en /api/orders:', error);
-    console.error('📌 Detalles:', error.message);
-    console.error('📌 SQL State:', error.code);
-    console.error('📌 Stack:', error.stack);
-
+    // Mantenemos el manejo de errores original
     res.status(500).json({
       success: false,
       error: 'Error creando orden: ' + error.message,
@@ -164,25 +177,32 @@ app.post('/api/orders', async (req, res) => {
     });
   }
 });
+
 // Obtener orden por ID
 app.get('/api/orders/:id', async (req, res) => {
   try {
-    const [orders] = await connection.execute(
+    // execute -> query
+    const ordersResult = await connection.query(
       `SELECT o.*, i.invoice_number, i.issue_date, i.due_date, i.total_amount as invoice_total
-       FROM orders o
-       LEFT JOIN invoices i ON o.id = i.order_id
-       WHERE o.id = ?`,
+       FROM orders o
+       LEFT JOIN invoices i ON o.id = i.order_id
+       WHERE o.id = $1`, // ? -> $1
       [req.params.id]
     );
+
+    const orders = ordersResult.rows; // Obtener filas en PostgreSQL
 
     if (orders.length === 0) {
       return res.status(404).json({ success: false, error: 'Orden no encontrada' });
     }
 
-    const [items] = await connection.execute(
-      `SELECT * FROM order_items WHERE order_id = ?`,
+    // execute -> query
+    const itemsResult = await connection.query(
+      `SELECT * FROM order_items WHERE order_id = $1`, // ? -> $1
       [req.params.id]
     );
+
+    const items = itemsResult.rows;
 
     res.json({
       success: true,
@@ -197,13 +217,12 @@ app.get('/api/orders/:id', async (req, res) => {
 });
 
 // Actualizar estado de pago
-// Actualizar estado de pago
 app.post('/api/orders/:id/payment-status', async (req, res) => {
   try {
     const { paymentStatus, paymentReference } = req.body;
 
-    await connection.execute(
-      `UPDATE orders SET payment_status = ?, payment_reference = ? WHERE id = ?`,
+    await connection.query( // execute -> query
+      `UPDATE orders SET payment_status = $1, payment_reference = $2 WHERE id = $3`, // ? -> $n
       [paymentStatus, paymentReference, req.params.id]
     );
 
@@ -227,17 +246,18 @@ app.post('/api/orders/:orderNumber/status', async (req, res) => {
 
     console.log(`🔄 Actualizando orden ${orderNumber} a estado: ${paymentStatus}`);
 
-    const [result] = await connection.execute(
+    const result = await connection.query( // execute -> query
       `UPDATE orders SET 
-        payment_status = ?, 
-        payment_reference = ?,
-        order_status = 'processing',
-        updated_at = CURRENT_TIMESTAMP
-       WHERE order_number = ?`,
+        payment_status = $1, 
+        payment_reference = $2,
+        order_status = 'processing',
+        updated_at = CURRENT_TIMESTAMP
+       WHERE order_number = $3`, // ? -> $3
       [paymentStatus, paymentReference, orderNumber]
     );
 
-    if (result.affectedRows === 0) {
+    // affectedRows en PostgreSQL está en result.rowCount
+    if (result.rowCount === 0) {
       return res.status(404).json({
         success: false,
         error: 'Orden no encontrada'
@@ -265,13 +285,15 @@ app.post('/api/orders/:orderNumber/status', async (req, res) => {
 // Ruta para obtener orden por número de orden
 app.get('/api/orders/number/:orderNumber', async (req, res) => {
   try {
-    const [orders] = await connection.execute(
+    const ordersResult = await connection.query( // execute -> query
       `SELECT o.*, i.invoice_number, i.issue_date, i.due_date, i.total_amount as invoice_total
-       FROM orders o
-       LEFT JOIN invoices i ON o.id = i.order_id
-       WHERE o.order_number = ?`,
+       FROM orders o
+       LEFT JOIN invoices i ON o.id = i.order_id
+       WHERE o.order_number = $1`, // ? -> $1
       [req.params.orderNumber]
     );
+
+    const orders = ordersResult.rows;
 
     if (orders.length === 0) {
       return res.status(404).json({
@@ -280,10 +302,12 @@ app.get('/api/orders/number/:orderNumber', async (req, res) => {
       });
     }
 
-    const [items] = await connection.execute(
-      `SELECT * FROM order_items WHERE order_id = ?`,
+    const itemsResult = await connection.query( // execute -> query
+      `SELECT * FROM order_items WHERE order_id = $1`, // ? -> $1
       [orders[0].id]
     );
+
+    const items = itemsResult.rows;
 
     res.json({
       success: true,

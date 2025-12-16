@@ -1,18 +1,39 @@
-// config/db.js
-import mysql from 'mysql2/promise';
+// ===================================
+// config/db.js (SOLUCIÓN DEFINITIVA)
+// ===================================
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Cargar .env para entornos locales/Node
+dotenv.config({ path: path.resolve(process.cwd(), '.env') }); 
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+const CONNECTION_STRING = process.env.DATABASE_URL;
+
+if (!CONNECTION_STRING) {
+    console.error("❌ ERROR CRÍTICO: La variable DATABASE_URL de Neon no está configurada.");
+    throw new Error("DATABASE_URL no está definida.");
+}
+
+// 1. DEFINICIÓN Y EXPORTACIÓN DEL POOL
+export const pool = new Pool({
+    connectionString: CONNECTION_STRING,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
-export default pool;
+// 2. EXPORTACIÓN DEL ALIAS (para compatibilidad si se usa 'connection')
+export const connection = pool; 
+
+
+// 3. PRUEBA DE CONEXIÓN
+pool.connect()
+    .then(client => {
+        client.release();
+        console.log('PostgreSQL Pool Conectado Exitosamente! ✅');
+    })
+    .catch(err => {
+        console.error('❌ ERROR: Falló la conexión al Pool de PostgreSQL.', err.stack);
+        process.exit(1); 
+    });
