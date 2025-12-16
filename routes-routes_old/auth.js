@@ -16,14 +16,16 @@ axios.post(`${import.meta.env.VITE_API_URL}/login`)
  */
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, name } = req.body;
 
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password || !name) {
+      
       return res.status(400).json({
         error: 'Todos los campos son obligatorios'
       });
     }
-
+const [firstName, ...lastParts] = name.split(' ');
+    const lastName = lastParts.join(' ') || '';
     // Verificar si existe
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
