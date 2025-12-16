@@ -1,4 +1,4 @@
-import { pool } from '../../config/db.js';
+import { pool } from '../_lib/db.js';
 import bcrypt from 'bcryptjs';
 import { sendWelcomeEmail } from '../../utils/mailer.js';
 

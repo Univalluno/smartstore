@@ -1,5 +1,5 @@
 // models/User.js - PostgreSQL/Neon
-import { pool } from '../config/db.js'; // Importamos el pool de PostgreSQL
+import { pool } from './_lib/db.js';
 import bcrypt from 'bcryptjs';
 
 class User {
