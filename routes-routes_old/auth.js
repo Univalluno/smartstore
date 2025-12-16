@@ -14,6 +14,8 @@ axios.post(`${import.meta.env.VITE_API_URL}/login`)
  * REGISTRO
  * ============================
  */
+console.log('BODY RECIBIDO:', req.body);
+
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
