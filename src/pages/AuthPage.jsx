@@ -1,5 +1,5 @@
 // src/pages/AuthPage.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
@@ -14,18 +14,30 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showQR, setShowQR] = useState(false);
+  const [mfaSecret, setMfaSecret] = useState("");
+  const [mfaUserId, setMfaUserId] = useState(null);
+  const [mfaSetupData, setMfaSetupData] = useState(null);
   const [showMFACode, setShowMFACode] = useState(false);
   const [mfaCode, setMfaCode] = useState("");
   const [tempToken, setTempToken] = useState("");
   const [qrImage, setQrImage] = useState("");
 
-  // === NUEVOS ESTADOS PARA RECUPERAR CONTRASEÑA ===
+  // Estados para recuperar contraseña
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, completeMFALogin, pendingUser } = useAuth();
+
+  // Manejar usuario pendiente de MFA al cargar
+  useEffect(() => {
+    if (pendingUser) {
+      setMfaUserId(pendingUser.id);
+      setShowMFACode(true);
+      toast("Sesión requiere verificación MFA", { icon: "🔐" });
+    }
+  }, [pendingUser]);
 
   // ===== LOGIN / REGISTER =====
   const handleSubmit = async (e) => {
@@ -55,7 +67,7 @@ const AuthPage = () => {
 
       if (!response.ok) throw new Error(data.error || "Algo salió mal");
 
-      // MFA
+      // MFA - Casos antiguos (para compatibilidad)
       if (isLogin && data.setup && data.qr) {
         setTempToken(data.tempToken);
         setQrImage(data.qr);
@@ -64,12 +76,36 @@ const AuthPage = () => {
         setTempToken(data.tempToken);
         setShowMFACode(true);
       } else if (!isLogin) {
-        toast.success("Cuenta creada correctamente, ahora inicia sesión");
-        setIsLogin(true);
-        setPassword("");
+        // ✅ REGISTRO: Si incluye QR MFA
+        if (data.mfaSetup) {
+          setMfaSetupData(data.mfaSetup);
+          setMfaUserId(data.user.id);
+          setShowQR(true);
+          setQrImage(data.mfaSetup.qrCode);
+          setMfaSecret(data.mfaSetup.secret);
+          toast.success("¡Registro exitoso! Configura MFA escaneando el QR");
+        } else {
+          toast.success("Cuenta creada correctamente, ahora inicia sesión");
+          setIsLogin(true);
+          setPassword("");
+        }
       } else {
-        login(data.user, data.token);
-        navigate("/");
+        // ✅ LOGIN: Verificar si requiere MFA
+        if (data.requiresMFA) {
+          setMfaUserId(data.userId);
+          setShowMFACode(true);
+          toast("Ingresa código MFA", { icon: "🔐" });
+        if (data.requiresMFA) {
+  setMfaUserId(data.userId);
+  setShowMFACode(true);
+  toast("Ingresa código MFA", { icon: "🔐" });
+  return;
+}
+
+// ✅ SOLO SI NO HAY MFA
+login(data.user, data.token);
+navigate("/");
+        }
       }
     } catch (err) {
       setError(err.message);
@@ -79,20 +115,59 @@ const AuthPage = () => {
     }
   };
 
-  // ===== VERIFICAR MFA =====
+  // ===== VERIFICAR MFA (2 CASOS: ACTIVACIÓN Y LOGIN) =====
   const handleVerifyMFA = async () => {
     try {
-      const response = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tempToken, code: mfaCode }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Código inválido");
+      let response;
+      let endpoint;
 
-      login(data.user, data.token);
-      toast.success("¡Autenticación exitosa! Redirigiendo...");
-      setTimeout(() => navigate("/"), 2000);
+      if (showQR) {
+        // CASO 1: Verificar código para ACTIVAR MFA (después de registro)
+        endpoint = "/api/auth/enable-mfa";
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: mfaUserId,
+            token: mfaCode,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Código inválido");
+
+        toast.success("✅ MFA activado correctamente");
+        setShowQR(false);
+        setMfaCode("");
+        
+        // ✅ MEJORADO: Redirigir automáticamente al login
+        toast.success("✅ Ahora inicia sesión con tu nueva cuenta");
+        setIsLogin(true);
+        setEmail("");
+        setPassword("");
+        setFirstName("");
+        setLastName("");
+
+      } else if (showMFACode) {
+        // CASO 2: Verificar código para LOGIN MFA
+        endpoint = "/api/auth/mfa-login";
+        response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: mfaUserId,
+            token: mfaCode,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Código inválido");
+
+        // ✅ USAR completeMFALogin EN LUGAR DE login
+        completeMFALogin(data.user, data.token);
+        toast.success("¡Autenticación exitosa! Redirigiendo...");
+        setTimeout(() => navigate("/"), 2000);
+      }
     } catch (err) {
       setError(err.message);
       toast.error(err.message);
@@ -286,42 +361,72 @@ const AuthPage = () => {
           </div>
         </form>
 
-        {/* QR MFA */}
-        {showQR && (
-          <div className="p-6 text-center">
-            <img src={qrImage} alt="QR MFA" className="mx-auto w-48 h-48" />
+        {/* QR MFA PARA REGISTRO */}
+        {showQR && mfaSetupData && (
+          <div className="p-6 text-center border-t">
+            <h3 className="text-lg font-bold mb-4">🔒 Configurar Autenticación en Dos Pasos</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Escanea este QR con Google Authenticator
+            </p>
+            <img
+              src={mfaSetupData.qrCode}
+              alt="QR MFA"
+              className="mx-auto w-48 h-48 border-2 border-gray-300 rounded-lg"
+            />
+
             <input
               type="text"
               value={mfaCode}
               onChange={(e) => setMfaCode(e.target.value)}
-              placeholder="Código MFA"
-              className="mt-4 p-3 border rounded w-full"
+              placeholder="Ingresa el código de 6 dígitos"
+              className="mt-4 p-3 border rounded w-full text-center text-lg"
+              maxLength={6}
             />
+
             <button
               onClick={handleVerifyMFA}
-              className="mt-4 bg-green-600 text-white py-2 px-4 rounded"
+              className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded font-medium"
             >
-              Verificar
+              Activar Autenticación en Dos Pasos
             </button>
           </div>
         )}
 
-        {/* MFA LOGIN */}
+        {/* MFA LOGIN (cuando ya está activado) - DISEÑO MEJORADO */}
         {showMFACode && (
-          <div className="p-6">
+          <div className="p-6 border-t">
+            <h3 className="text-lg font-bold mb-4">🔐 Verificación en Dos Pasos</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Ingresa el código de 6 dígitos de Google Authenticator
+            </p>
             <input
               type="text"
               value={mfaCode}
               onChange={(e) => setMfaCode(e.target.value)}
-              placeholder="Código MFA"
-              className="p-3 border rounded w-full"
+              placeholder="000000"
+              className="p-3 border rounded w-full text-center text-2xl font-mono tracking-widest"
+              maxLength={6}
+              autoFocus
             />
-            <button
-              onClick={handleVerifyMFA}
-              className="mt-4 bg-blue-600 text-white py-2 px-4 rounded w-full"
-            >
-              Verificar
-            </button>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => {
+                  setShowMFACode(false);
+                  setMfaCode("");
+                  setError("");
+                }}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 px-4 rounded font-medium"
+              >
+                Volver
+              </button>
+              <button
+                onClick={handleVerifyMFA}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded font-medium"
+              >
+                Verificar y entrar
+              </button>
+            </div>
           </div>
         )}
 
