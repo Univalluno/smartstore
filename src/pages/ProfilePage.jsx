@@ -38,34 +38,61 @@ const ProfilePage = () => {
     }
   }, [user]);
 
-  // Cargar órdenes
+  // Cargar órdenes DESDE POSTGRESQL
   useEffect(() => {
     const loadOrders = async () => {
       if (activeTab === 'orders' && user) {
         setLoadingOrders(true);
         try {
-          // Simulación de órdenes - en producción hacer fetch al backend
-          const mockOrders = [
-            {
-              id: 1,
-              orderNumber: 'ORD-56444127-64P2',
-              date: new Date().toLocaleDateString('es-CO'),
-              total: 5299900,
-              status: 'Pagado',
-              items: 2,
-              products: ['iPhone 15 Pro Max 256GB', 'Funda Protectora'],
-              customerName: user.displayName || user.email,
-              shippingAddress: 'Calle 123, Ciudad'
+          // Obtener órdenes REALES desde PostgreSQL
+          const userId = user.id || user.email;
+          
+          // Solo intentar obtener órdenes si el backend está funcionando
+          if (typeof fetch === 'function') {
+            try {
+              const response = await fetch(`/api/orders?userId=${userId}`);
+              
+              if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success && data.orders && Array.isArray(data.orders)) {
+                  // Transformar datos de PostgreSQL al formato esperado
+                  const formattedOrders = data.orders.map(order => ({
+                    id: order.id,
+                    orderNumber: order.order_number,
+                    date: new Date(order.created_at).toLocaleDateString('es-CO'),
+                    total: parseFloat(order.total) || 0,
+                    status: order.status || 'Pendiente',
+                    items: Array.isArray(order.items) ? order.items.length : 
+                           (order.items ? 1 : 0),
+                    products: Array.isArray(order.items) 
+                      ? order.items.map(item => item.name || 'Producto')
+                      : (order.items ? ['Productos de tu compra'] : [])
+                  }));
+                  
+                  setOrders(formattedOrders);
+                } else {
+                  setOrders([]); // No hay órdenes
+                }
+              } else {
+                setOrders([]); // Error en la petición
+              }
+            } catch (fetchError) {
+              console.log('⚠️ El backend no está disponible todavía');
+              setOrders([]); // Backend no disponible
             }
-          ];
-          setOrders(mockOrders);
+          } else {
+            setOrders([]); // fetch no disponible
+          }
         } catch (error) {
           console.error('Error cargando órdenes:', error);
+          setOrders([]);
         } finally {
           setLoadingOrders(false);
         }
       }
     };
+    
     loadOrders();
   }, [activeTab, user]);
 
@@ -83,7 +110,6 @@ const ProfilePage = () => {
   // Ver detalles del pedido
   const handleViewOrderDetails = (orderNumber) => {
     fetch(`/api/orders/number/${orderNumber}`)
-
       .then(res => res.json())
       .then(data => {
         if (data.success && data.order) {
@@ -109,38 +135,31 @@ ${items.map(item => `• ${item.product_name} x${item.quantity} - $${item.subtot
           
           alert(details);
         } else {
-          // Mostrar datos de simulación si no hay backend
+          // Mostrar datos de simulación
           const mockDetails = `
 📦 ORDEN: ${orderNumber}
 📅 Fecha: ${new Date().toLocaleDateString('es-CO')}
-💳 Estado: Pagado
-💰 Total: $5.299.900
+💳 Estado: Pendiente
+💰 Total: $0
 
 👤 Cliente: ${user?.displayName || user?.email || 'Cliente'}
 📧 Email: ${user?.email || 'No especificado'}
-📞 Teléfono: 3001234567
-📍 Envío: Calle 123, Ciudad, Colombia
-
-🧾 FACTURA: FAC-${orderNumber.slice(4)}
 
 PRODUCTOS:
-• iPhone 15 Pro Max 256GB x1 - $5.299.900
-• Funda Protectora x1 - $0 (regalo)
+• Esta orden está siendo procesada
           `;
           alert(mockDetails);
         }
       })
       .catch(err => {
         console.error('Error:', err);
-        // Mostrar simulación si falla el fetch
         const mockDetails = `
 📦 ORDEN: ${orderNumber}
 📅 Fecha: ${new Date().toLocaleDateString('es-CO')}
-💳 Estado: Pagado
-💰 Total: $5.299.900
+💳 Estado: Procesando
 
 PRODUCTOS:
-• iPhone 15 Pro Max 256GB x1 - $5.299.900
+• Tu orden está siendo procesada
         `;
         alert(mockDetails);
       });
@@ -148,6 +167,9 @@ PRODUCTOS:
 
   // Descargar factura
   const handleDownloadInvoice = (orderNumber) => {
+    // Buscar la orden localmente para mostrar productos reales
+    const order = orders.find(o => o.orderNumber === orderNumber);
+    
     const invoiceNumber = `FAC-${orderNumber.slice(4)}`;
     const invoiceContent = `
 <!DOCTYPE html>
@@ -195,24 +217,18 @@ PRODUCTOS:
     </thead>
     <tbody>
       <tr>
-        <td>iPhone 15 Pro Max 256GB</td>
-        <td>1</td>
-        <td>$5.299.900</td>
-        <td>$5.299.900</td>
-      </tr>
-      <tr>
-        <td>Funda Protectora Premium</td>
-        <td>1</td>
-        <td>$0</td>
-        <td>$0</td>
+        <td>${order ? `Productos de tu compra (${order.items || 0} items)` : 'Productos de tu compra'}</td>
+        <td>${order ? order.items || 1 : 1}</td>
+        <td>${order ? `$${Math.round((order.total || 0) / (order.items || 1)).toLocaleString()}` : '-'}</td>
+        <td>${order ? `$${order.total?.toLocaleString() || '0'}` : '-'}</td>
       </tr>
     </tbody>
   </table>
   
   <div class="total">
-    <p>Subtotal: $5.299.900</p>
-    <p>IVA (19%): $1.006.981</p>
-    <p><strong>TOTAL A PAGAR: $6.306.881</strong></p>
+    <p>Subtotal: ${order ? `$${order.total?.toLocaleString() || '0'}` : '$0'}</p>
+    <p>IVA (19%): ${order ? `$${Math.round((order.total || 0) * 0.19).toLocaleString()}` : '$0'}</p>
+    <p><strong>TOTAL A PAGAR: ${order ? `$${Math.round((order.total || 0) * 1.19).toLocaleString()}` : '$0'}</strong></p>
   </div>
   
   <div class="footer">
@@ -346,7 +362,11 @@ PRODUCTOS:
                       <div>
                         <p className="text-gray-700">{order.items} producto(s)</p>
                         <p className="text-2xl font-bold text-orange-600">${order.total.toLocaleString()}</p>
-                        <p className="text-gray-600 text-sm">{order.products.join(', ')}</p>
+                        <p className="text-gray-600 text-sm">
+                          {order.products && order.products.length > 0 
+                            ? order.products.join(', ') 
+                            : 'Productos de tu compra'}
+                        </p>
                       </div>
                       
                       <div className="flex gap-3">
@@ -405,4 +425,4 @@ PRODUCTOS:
   );
 };
 
-export default ProfilePage; 
+export default ProfilePage;

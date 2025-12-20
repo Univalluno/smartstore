@@ -63,6 +63,7 @@ function PaymentSimulation() {
         }
     };
 
+
     const currentMethod = paymentMethods[method] || paymentMethods.nequi;
 
     useEffect(() => {
@@ -93,22 +94,28 @@ function PaymentSimulation() {
             setIsProcessing(false);
             setPaymentCompleted(true);
 
-        
-            fetch(`/api/orders/${orderNumber}/status`, {
 
-                method: 'POST',
+            fetch(`/api/orders`, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    orderId: orderNumber,
                     paymentStatus: 'paid',
                     paymentReference: 'PAY-' + Date.now().toString().slice(-8)
                 })
             })
-                .then(response => response.json())
+                .then(async (response) => {
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(`Error ${response.status}: ${text}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     console.log('✅ Orden actualizada:', data);
                 })
                 .catch(error => {
-                    console.error('❌ Error actualizando orden:', error);
+                    console.error('❌ Error actualizando orden:', error.message);
                 });
 
             // Simular email

@@ -1,4 +1,5 @@
 // pages/CheckoutPage.jsx
+import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -6,6 +7,7 @@ function CheckoutPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { cart = [], total = 0 } = location.state || {};
+    const { user } = useAuth();
 
     // Estados para formulario
     const [step, setStep] = useState(1); // 1: Envío, 2: Pago, 3: Confirmación
@@ -34,13 +36,12 @@ function CheckoutPage() {
 
     // Cargar datos del usuario si está autenticado
     useEffect(() => {
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            const user = JSON.parse(userData);
+        if (user) {
             setCustomerName(user.name || '');
             setCustomerEmail(user.email || '');
         }
-    }, []);
+    }, [user]);
+
 
     // Validar si hay productos
     useEffect(() => {
@@ -136,11 +137,16 @@ function CheckoutPage() {
             };
 
             // Añadir userId si existe
-            const userData = localStorage.getItem('user');
-            if (userData) {
-                const user = JSON.parse(userData);
-                orderDataToSend.userId = user.id;
+            // Validar usuario autenticado
+            if (!user?.id) {
+                alert('Debes iniciar sesión para completar la compra');
+                setIsProcessing(false);
+                return;
             }
+
+            // Enviar userId REAL (UUID)
+            orderDataToSend.userId = user.id;
+
 
             console.log('📤 Enviando a /api/orders:', orderDataToSend);
 
@@ -157,6 +163,8 @@ function CheckoutPage() {
             const result = await response.json();
             console.log('📊 Resultado JSON:', result);
 
+            // VERIFICAR si la orden fue creada exitosamente
+            // VERIFICAR si la orden fue creada exitosamente
             if (result.success) {
                 setOrderData(result);
                 setOrderCreated(true);
@@ -168,7 +176,7 @@ function CheckoutPage() {
                 // REDIRIGIR A LA SIMULACIÓN DE PAGO
                 navigate(`/payment/${paymentMethod}`, {
                     state: {
-                        orderNumber: result.orderNumber,
+                        orderNumber: result.orderNumber || result.orderId,
                         total: total,
                         customerEmail: customerEmail,
                         customerName: customerName
@@ -177,6 +185,7 @@ function CheckoutPage() {
 
             } else {
                 throw new Error(result.error || 'Error del servidor');
+
             }
 
         } catch (error) {
