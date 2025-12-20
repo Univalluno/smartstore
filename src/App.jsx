@@ -12,6 +12,8 @@
   import { useAuth } from './context/AuthContext';
   import CheckoutPage from "./pages/CheckoutPage";
   import PaymentSimulation from './pages/PaymentSimulation ';
+  import OAuthSuccess from "./pages/OAuthSuccess";
+
   const allProducts = [
     // TECNOLOGÍA - Celulares
     {
@@ -1146,6 +1148,10 @@
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/payment/:method" element={<PaymentSimulation />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/oauth/success" element={<OAuthSuccess />} />
+
+          
+
 
           <Route
             path="/perfil"

@@ -319,44 +319,6 @@ navigate("/");
               <div className="flex-grow border-t border-gray-300"></div>
             </div>
             <div className="grid grid-cols-3 gap-3 mt-6">
-              <button
-                type="button"
-                onClick={() => handleOAuthLogin("google")}
-                className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition"
-              >
-                <img
-                  src="https://www.google.com/favicon.ico"
-                  alt="Google"
-                  className="w-5 h-5"
-                />
-                <span className="text-sm font-medium">Google</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleOAuthLogin("microsoft")}
-                className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition"
-              >
-                <img
-                  src="https://www.microsoft.com/favicon.ico"
-                  alt="Microsoft"
-                  className="w-5 h-5"
-                />
-                <span className="text-sm font-medium">Microsoft</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleOAuthLogin("facebook")}
-                className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg py-3 hover:bg-gray-50 transition"
-              >
-                <img
-                  src="https://www.facebook.com/favicon.ico"
-                  alt="Facebook"
-                  className="w-5 h-5"
-                />
-                <span className="text-sm font-medium">Facebook</span>
-              </button>
             </div>
           </div>
         </form>
